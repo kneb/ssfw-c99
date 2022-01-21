@@ -6,14 +6,17 @@ OUTNAME = ssfw
 
 DEVICE = atmega8
 CLOCK = 16000000
-COMPILER = avr-gcc
+COMPILER = avr-gcc-5.4.0
 
-ARGS = -mmcu=$(DEVICE) -std=c99 -Os -Wall -Wextra -pedantic
-LINK = -mmcu=$(DEVICE) -Wall -Wextra -Os
+ARGS = -mmcu=$(DEVICE) -std=c99 -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -MMD -flto
+
+LINK = -mmcu=$(DEVICE) -Wall -Wextra -Os -fuse-linker-plugin -Wl,--gc-sections
 
 SRCC := $(wildcard *.c)
 OBJECTS := $(patsubst %.c,%.o,$(SRCC))
 SRCOBJ := $(addprefix $(BUILDDIR)/, $(OBJECTS))
+#SUFF := o -lm
+#SRCOBJL := $(patsubst %.o,%.o -lm,$(SRCOBJ))
 
 .PHONY: all clean
 
@@ -28,6 +31,9 @@ all: $(OBJECTS)
 	@avr-size --format=avr --mcu=$(DEVICE) $(BUILDDIR)/$(OUTNAME).elf
 	@echo "Build is Ok $(BUILDDIR)/$(OUTNAME).hex"
 
+size:
+	avr-size --format=avr --mcu=$(DEVICE) $(BUILDDIR)/$(OUTNAME).elf
+	
 clean:
 	@rm -f $(BUILDDIR)/*
 	@echo "All Clean"

@@ -49,16 +49,14 @@ typedef struct {
     uint8_t beepDurationDelay;
     uint8_t beepCount;
     uint8_t beepTim;
-} Sound;
+} stSound_t;
     
-void Sound_beep(uint16_t duration_ms, uint8_t count, uint16_t delay_ms);
-void Sound_getBeep();
+void sound_beep(uint16_t duration_ms, uint8_t count, uint16_t delay_ms);
+void sound_getBeep();
 
-extern Lcd lcd;
-extern Encoder encoder;
-extern ThermoFan thermoFan;
-extern Solder solder;
-extern Sound sound;
+extern stThermoFan_t thermoFan;
+extern stSolder_t solder;
+extern stSound_t sound;
 
 void init();
 void calcK(int16_t *k, int16_t *b, uint16_t *adc1, uint16_t *adc2, 

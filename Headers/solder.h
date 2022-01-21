@@ -16,57 +16,36 @@
 #define MIN_SOLDER_TEMP 50
 #define DELAY_SLEEP 180 //in sec (3 min)
 
-#define SOL_HEAT_OFF 0
-#define SOL_HEAT_ON 1
 #define SOL_HEAT_SLEEP 2
 #define SOL_HEAT_ON_FIX_POWER 3
 
 #define PORT_VIBRO PIND
 #define VIBRO (1 << PIND3)
 
-class Solder{
-  private:
-  public:
-    static uint16_t EEMEM arefTemp1; 
-    static uint16_t EEMEM arefTemp2;
-    static uint16_t EEMEM arefAdc1;
-    static uint16_t EEMEM arefAdc2;
-    static uint16_t EEMEM atempSets;
-    static float EEMEM akP;
-    static float EEMEM akI;
-    static float EEMEM akD;
+extern uint16_t EEMEM sol_arefTemp1;
+extern uint16_t EEMEM sol_arefTemp2;
+extern uint16_t EEMEM sol_arefAdc1;
+extern uint16_t EEMEM sol_arefAdc2;
+extern uint16_t EEMEM sol_atempSets;
+extern float EEMEM sol_akP;
+extern float EEMEM sol_akI;
+extern float EEMEM sol_akD;
 
-    Solder();
-    uint16_t temp;
-    uint16_t currentTemp;
-    uint8_t isPowered;
-    float k;
-    float b;
-    uint16_t refTemp1; 
-    uint16_t refTemp2;
-    uint16_t refAdc1;
-    uint16_t refAdc2;
-    uint16_t adc;
-    uint8_t power;
+typedef struct {
     uint8_t timerSleep;
+    stPID_t PID;
+} stSolder_t;
 
-    PIDRegulator PID;
-    
-    void setPowerOn();
-    void setPowerOff();
-    void setPowerFixOnOff();
-    void setTemp(uint16_t temp);
-    void setTemp(bool isClockwise);
-    void setPowerSleep();
-    void setPower(uint8_t power);
-    void setPower(bool isClockwise);
-    void tempConversion(uint16_t adc);
-    void atributesConversion();
-    void setEtalon(bool isClockwise);
-    void fixEtalon();
-    void readEeprom();
-    void updateEeprom();
-    void getStatus();
-};
+void solder_init();
+void solder_setPowerOn();
+void solder_setPowerOff();
+void solder_setPowerFixOnOff();
+void solder_setTemp(uint16_t temp);
+void solder_setTempRotation(bool isClockwise);
+void solder_setPowerSleep();
+void solder_setPower(uint8_t power);
+void solder_setPowerRotation(bool isClockwise);
+void solder_readEeprom();
+void solder_getStatus();
 
 #endif /* SOLDER_H_ */

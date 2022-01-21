@@ -10,16 +10,11 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdbool.h>
 
-class Encoder{
-  private:
-    uint8_t buttonDown;
-    void onClickButton();
-  public:
-    Encoder();
-    void onRotation(bool isClockwise);
-    void getButtonStatus();
-};
-
+extern uint8_t encoderButtonDown;
+void encoder_onClickButton();
+void encoder_onRotation(bool isClockwise);
+void encoder_getButtonStatus();
 
 #endif /* ENCODER_H_ */

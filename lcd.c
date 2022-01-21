@@ -8,7 +8,7 @@
 #include "Headers/globals.h"
 #include "Headers/lcd.h"
 
-St_Menu Lcd_menu;
+stMenu_t lcdMenu;
 
 const uint8_t curType[4] PROGMEM = {CURSOR_LEFT_ARROW, CURSOR_RIGHT_ARROW,
                             CURSOR_LEFT_ANGLE, CURSOR_RIGHT_ANGLE};
@@ -33,171 +33,171 @@ const uint16_t curPosPIDMenu[8] PROGMEM = {
   0x9100 //solder kI
 };
 
-void Lcd_Init(){
-  Lcd_menu.isEdit = 0;
-  Lcd_menu.param = 1;
-  Lcd_menu.level = 255;
+void lcd_init() {
+  lcdMenu.isEdit = 0;
+  lcdMenu.param = 1;
+  lcdMenu.level = 255;
 }
 
-void Lcd_printMain(){
+void lcd_printMain() {
   cli();
-  hd44780.clear();
-  hd44780.goTo(0, 0);
-  hd44780.sendStringFlash(PSTR("\x04"));
-  this->printInt(1, 0, thermoFan.currentTemp, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  hd44780.goTo(6, 0);
-  hd44780.sendStringFlash(PSTR("\x03"));
-  this->printInt(7, 0, thermoFan.fan, 3, false);
-  hd44780.sendStringFlash(PSTR("%"));
-  this->printInt(12, 0, thermoFan.temp, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  hd44780.goTo(0, 1);
-  hd44780.sendChar(0);
-  this->printInt(1, 1, solder.currentTemp, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  hd44780.goTo(9, 1);
-  hd44780.sendStringFlash(PSTR("\x06"));
-  this->printInt(12, 1, solder.temp, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  this->printMenuCursor(CURSOR_TYPE_ARROW);
+  hd44780_clear();
+  hd44780_goTo(0, 0);
+  hd44780_sendStringFlash(PSTR("\x04"));
+  lcd_printInt(1, 0, thermoFan.PID.currentTemp, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  hd44780_goTo(6, 0);
+  hd44780_sendStringFlash(PSTR("\x03"));
+  lcd_printInt(7, 0, thermoFan.fan, 3, false);
+  hd44780_sendStringFlash(PSTR("%"));
+  lcd_printInt(12, 0, thermoFan.PID.temp, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  hd44780_goTo(0, 1);
+  hd44780_sendChar(0);
+  lcd_printInt(1, 1, solder.PID.currentTemp, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  hd44780_goTo(9, 1);
+  hd44780_sendStringFlash(PSTR("\x06"));
+  lcd_printInt(12, 1, solder.PID.temp, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  lcd_printMenuCursor(CURSOR_TYPE_ARROW);
   sei();
 } 
 
-void Lcd::printMenu(){
+void lcd_printMenu() {
   cli();
-  hd44780.clear();
-  hd44780.goTo(0, 0);
-  hd44780.sendStringFlash(PSTR("cal.TF   Save  x"));
-  hd44780.goTo(0, 1);
-  hd44780.sendStringFlash(PSTR("cal.Sl  PID"));
-  this->printMenuCursor(CURSOR_TYPE_ARROW);
+  hd44780_clear();
+  hd44780_goTo(0, 0);
+  hd44780_sendStringFlash(PSTR("cal.TF   Save  x"));
+  hd44780_goTo(0, 1);
+  hd44780_sendStringFlash(PSTR("cal.Sl  PID"));
+  lcd_printMenuCursor(CURSOR_TYPE_ARROW);
   sei();
 }
 
-void Lcd::printPIDMenu(){
+void lcd_printPIDMenu() {
   cli();
-  hd44780.clear();
-  hd44780.goTo(0, 0);
-  hd44780.sendStringFlash(PSTR("\x04"));
-  this->printInt(1, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KP), 3);
-  hd44780.sendStringFlash(PSTR(" I"));
-  this->printInt(6, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KI), 3);
-  hd44780.sendStringFlash(PSTR(" D"));
-  this->printInt(11, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KD), 3);
-  hd44780.sendStringFlash(PSTR(" x"));
+  hd44780_clear();
+  hd44780_goTo(0, 0);
+  hd44780_sendStringFlash(PSTR("\x04"));
+  lcd_printInt(1, 0, 
+      pid_getMultiplier(&thermoFan.PID, PID_KP), 3, true);
+  hd44780_sendStringFlash(PSTR(" I"));
+  lcd_printInt(6, 0, 
+      pid_getMultiplier(&thermoFan.PID, PID_KI), 3, true);
+  hd44780_sendStringFlash(PSTR(" D"));
+  lcd_printInt(11, 0, 
+      pid_getMultiplier(&thermoFan.PID, PID_KD), 3, true);
+  hd44780_sendStringFlash(PSTR(" x"));
 
-  hd44780.goTo(0, 1);
-  hd44780.sendChar(0);
-  this->printInt(1, 1, solder.PID.getMultiplier(PID_Types::PID_KP), 3);
-  hd44780.sendStringFlash(PSTR(" I"));
-  this->printInt(6, 1, solder.PID.getMultiplier(PID_Types::PID_KI), 3);
-  hd44780.sendStringFlash(PSTR(" D"));
-  this->printInt(11, 1, solder.PID.getMultiplier(PID_Types::PID_KD), 3);
-  hd44780.sendStringFlash(PSTR(" s"));
+  hd44780_goTo(0, 1);
+  hd44780_sendChar(0);
+  lcd_printInt(1, 1, 
+      pid_getMultiplier(&solder.PID, PID_KP), 3, true);
+  hd44780_sendStringFlash(PSTR(" I"));
+  lcd_printInt(6, 1, 
+      pid_getMultiplier(&solder.PID, PID_KI), 3, true);
+  hd44780_sendStringFlash(PSTR(" D"));
+  lcd_printInt(11, 1, 
+      pid_getMultiplier(&solder.PID, PID_KD), 3, true);
+  hd44780_sendStringFlash(PSTR(" s"));
 
-  this->printMenuCursor(CURSOR_TYPE_ARROW);
+  lcd_printMenuCursor(CURSOR_TYPE_ARROW);
   sei();
 }
 
-void Lcd::printCalibration(uint8_t calibrationMenu = CALIBRATION_THERMOFAN){
-  uint16_t temp;
-  uint16_t temp1;
-  uint16_t temp2;
-  uint16_t adc1;
-  uint16_t adc2;
-  if (calibrationMenu == CALIBRATION_THERMOFAN){
-    temp1 = thermoFan.refTemp1;
-    temp2 = thermoFan.refTemp2;
-    adc1 = thermoFan.refAdc1;
-    adc2 = thermoFan.refAdc2;
-    temp = thermoFan.currentTemp;
-    thermoFan.setPower((uint8_t)20);
+void lcd_printCalibration(uint8_t calibrationMenu) {
+  stPID_t *pid = NULL;
+  if (calibrationMenu == CALIBRATION_THERMOFAN) {
+    pid = &thermoFan.PID;   
   } else {
-    temp1 = solder.refTemp1;
-    temp2 = solder.refTemp2;
-    adc1 = solder.refAdc1;
-    adc2 = solder.refAdc2;
-    temp = solder.currentTemp;
-    solder.setPower((uint8_t)20);
+    pid = &solder.PID;
   }
+  pid_setPower(pid, (uint8_t)20);
+  uint16_t temp = pid->currentTemp;
+  uint16_t temp1 = pid->refTemp1;
+  uint16_t temp2 = pid->refTemp2;
+  uint16_t adc1 = pid->refAdc1;
+  uint16_t adc2 = pid->refAdc2;
 
   cli();
-  hd44780.clear();
-  this->printInt(0, 0, temp1, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  this->printInt(5, 0, adc1, 4);
-  hd44780.sendChar(calibrationMenu);
-  this->printInt(10, 0, temp, 3);
-  hd44780.sendStringFlash(PSTR("\x02 x"));
-  this->printInt(0, 1, temp2, 3);
-  hd44780.sendStringFlash(PSTR("\x02"));
-  this->printInt(5, 1, adc2, 4);
-  this->printInt(10, 1, 20, 3);
-  hd44780.sendStringFlash(PSTR("% s"));
-  this->printMenuCursor(CURSOR_TYPE_ARROW);
+  hd44780_clear();
+  lcd_printInt(0, 0, temp1, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  lcd_printInt(5, 0, adc1, 4, true);
+  hd44780_sendChar(calibrationMenu);
+  lcd_printInt(10, 0, temp, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02 x"));
+  lcd_printInt(0, 1, temp2, 3, true);
+  hd44780_sendStringFlash(PSTR("\x02"));
+  lcd_printInt(5, 1, adc2, 4, true);
+  lcd_printInt(10, 1, 20, 3, true);
+  hd44780_sendStringFlash(PSTR("% s"));
+  lcd_printMenuCursor(CURSOR_TYPE_ARROW);
   sei();
 }
 
-void Lcd::printInt(uint8_t x, uint8_t y, uint16_t source, uint8_t len, bool zero){
+void lcd_printInt(uint8_t x, uint8_t y, uint16_t source, uint8_t len, 
+                   bool zero) {
   char buf[5];
-  hd44780.goTo(x, y);
+  hd44780_goTo(x, y);
   itoa(buf, source, len, zero);
-  hd44780.sendString(buf);  
+  hd44780_sendString(buf);  
 }
 
-void Lcd::printLogo(){
-  hd44780.goTo(1, 0);
-  hd44780.sendStringFlash(PSTR("Soldering"));
-  hd44780.goTo(3, 1);
-  hd44780.sendStringFlash(PSTR("Station 1.0"));
+void lcd_printLogo() {
+  hd44780_goTo(1, 0);
+  hd44780_sendStringFlash(PSTR("Soldering"));
+  hd44780_goTo(3, 1);
+  hd44780_sendStringFlash(PSTR("Station 1.0"));
 }
 
-void Lcd::printIconsStatus(){
-  hd44780.goTo(6, 1);
-  if ((PORT_VIBRO & VIBRO) == 0){
-    hd44780.sendStringFlash(PSTR("\x07"));
+void lcd_printIconsStatus() {
+  hd44780_goTo(6, 1);
+  if ((PORT_VIBRO & VIBRO) == 0) {
+    hd44780_sendStringFlash(PSTR("\x07"));
   } else {
-    hd44780.sendStringFlash(PSTR("\x01"));
+    hd44780_sendStringFlash(PSTR("\x01"));
   }
-  if ((PORT_GERKON & GERKON) == 0){ //ThermoFan on stand
-    hd44780.sendStringFlash(PSTR("\x05"));
+  if ((PORT_GERKON & GERKON) == 0) { //ThermoFan on stand
+    hd44780_sendStringFlash(PSTR("\x05"));
   } else {
-    hd44780.sendStringFlash(PSTR("\xc6"));
+    hd44780_sendStringFlash(PSTR("\xc6"));
   }  
 }
 
-void Lcd::printMenuCursor(uint8_t cursorType = CURSOR_TYPE_ARROW){
+void lcd_printMenuCursor(uint8_t cursorType) {
   uint16_t buf = 0;
-  switch (this->menu.level){ 
+  switch (lcdMenu.level){ 
     case 0: //Dashboard cursor moving 
-      buf = pgm_read_word(&curPosDashboard[this->menu.param]);    
+      buf = pgm_read_word(&curPosDashboard[lcdMenu.param]);    
       break;
     case 1: //Root menu cursor moving
-      buf = pgm_read_word(&curPosRootMenu[this->menu.param]);    
+      buf = pgm_read_word(&curPosRootMenu[lcdMenu.param]);    
       break;
     case 2: //TF and
     case 3: //Solder menu cursor moving
-      buf = pgm_read_word(&curPosCalibration[this->menu.param]);
+      buf = pgm_read_word(&curPosCalibration[lcdMenu.param]);
       break;
     case 4: //PID Multipliers cursor moving
-      buf = pgm_read_word(&curPosPIDMenu[this->menu.param]);
+      buf = pgm_read_word(&curPosPIDMenu[lcdMenu.param]);
       break;
   } 
   uint8_t x = buf >> 12;
   uint8_t y = (buf >> 8) & 0x0F;
   uint8_t cursorId = buf & 0x00FF;
   if (cursorId <= 1) {
-    cursorId = pgm_read_byte(&curType[(this->menu.isEdit << 1)|(cursorId & 0x01)]);
+    cursorId = pgm_read_byte(&curType[(lcdMenu.isEdit << 1)|
+                              (cursorId & 0x01)]);
   }
   if (cursorType != CURSOR_TYPE_ARROW){
     cursorId = cursorType;
   }
-  hd44780.goTo(x, y);
-  hd44780.sendChar(cursorId);
+  hd44780_goTo(x, y);
+  hd44780_sendChar(cursorId);
 }
 
-void itoa(char* buf, uint16_t source, uint8_t len, bool zero){
+void itoa(char* buf, uint16_t source, uint8_t len, bool zero) {
   uint16_t div = 1;
   uint8_t i = 1;
   while (i < len){
@@ -221,7 +221,7 @@ void itoa(char* buf, uint16_t source, uint8_t len, bool zero){
   *buf = '\0';  
 }
 
-void Lcd::swapIsEdit(){
-  this->menu.isEdit ^= 1;
-  this->printMenuCursor(CURSOR_TYPE_ARROW);
+void lcd_swapIsEdit(){
+  lcdMenu.isEdit ^= 1;
+  lcd_printMenuCursor(CURSOR_TYPE_ARROW);
 }

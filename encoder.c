@@ -8,257 +8,255 @@
 #include "Headers/hd44780.h"
 #include "Headers/encoder.h"
 
-Encoder::Encoder(){
-  this->buttonDown = 0;
-}
+uint8_t encoderButtonDown = 0;
 
-void Encoder::getButtonStatus(){
-  if ((PIN_ENCEDER_SW & ENCEDER_SW) == 0){
+void encoder_getButtonStatus() {
+  if ((PIN_ENCEDER_SW & ENCEDER_SW) == 0) {
     _delay_ms(10); //time for contact unbounce
-    if (((PIN_ENCEDER_SW & ENCEDER_SW) == 0) && (this->buttonDown == 0)){
-      this->onClickButton();
-      this->buttonDown = 1;
+    if (((PIN_ENCEDER_SW & ENCEDER_SW) == 0) && (encoderButtonDown == 0)) {
+      encoder_onClickButton();
+      encoderButtonDown = 1;
     }
   } else {
-    this->buttonDown = 0;
+    encoderButtonDown = 0;
   }
 }
 
-void Encoder::onClickButton(){
-  switch(lcd.menu.level){ 
+void encoder_onClickButton() {
+  switch(lcdMenu.level) { 
     case 0: //Dashboard
-    switch(lcd.menu.param){
+    switch(lcdMenu.param) {
       case 0: //Soldering power on\off
-        sound.beep(300, 1, 0);
-        (solder.isPowered == 0) ? solder.setPowerOn() : solder.setPowerOff();   
+        sound_beep(300, 1, 0);
+        (solder.PID.isPowered == 0) ? solder_setPowerOn() : solder_setPowerOff();   
         break;
       case 1: //Thermofan power on\off
-        sound.beep(300, 1, 0);
-        (thermoFan.isPowered == 0) ? thermoFan.setPowerOn() : thermoFan.setPowerOff();     
+        sound_beep(300, 1, 0);
+        (thermoFan.PID.isPowered == 0) ? thermoFan_setPowerOn() : thermoFan_setPowerOff();     
         break;
       case 5: //Go to Root menu 
-        lcd.menu.level = 1;
-        lcd.menu.param = 3;
-        lcd.printMenu();
+        lcdMenu.level = 1;
+        lcdMenu.param = 3;
+        lcd_printMenu();
         break;
       default:
-        sound.beep(200, 1, 0);
-        lcd.swapIsEdit();
+        sound_beep(200, 1, 0);
+        lcd_swapIsEdit();
     }
     break;
     case 1: //Root menu
-      switch(lcd.menu.param){
+      switch(lcdMenu.param) {
         case 0: //Calibration Solder
-          lcd.menu.level = 2;
-          lcd.menu.param = 2;
-          lcd.printCalibration(CALIBRATION_SOLDER);
+          lcdMenu.level = 2;
+          lcdMenu.param = 2;
+          lcd_printCalibration(CALIBRATION_SOLDER);
           break;
         case 1: //Calibration ThermoFan
-          lcd.menu.level = 3;
-          lcd.menu.param = 2;
-          lcd.printCalibration(CALIBRATION_THERMOFAN);
+          lcdMenu.level = 3;
+          lcdMenu.param = 2;
+          lcd_printCalibration(CALIBRATION_THERMOFAN);
           break;
         case 2: //Save current set's
-          eeprom_update_byte(&ThermoFan::afanSets, thermoFan.fan);
-          eeprom_update_word(&ThermoFan::atempSets, thermoFan.temp);
-          eeprom_update_word(&Solder::atempSets, solder.temp);
-          sound.beep(400, 2, 500);
+          eeprom_update_byte(&tf_afanSets, thermoFan.fan);
+          eeprom_update_word(&tf_atempSets, thermoFan.PID.temp);
+          eeprom_update_word(&sol_atempSets, solder.PID.temp);
+          sound_beep(400, 2, 500);
           break;
         case 3: //Exit the root menu
-          lcd.menu.level = 0;
-          lcd.menu.param = 5;
-          lcd.printMain();
+          lcdMenu.level = 0;
+          lcdMenu.param = 5;
+          lcd_printMain();
           break;
         case 4: //PID Menu
-          lcd.menu.level = 4;
-          lcd.menu.param = 4;
-          lcd.printPIDMenu();
+          lcdMenu.level = 4;
+          lcdMenu.param = 4;
+          lcd_printPIDMenu();
           break;
       }
       break;
     case 2: //Calibration menu Solder
-      switch(lcd.menu.param){
+      switch(lcdMenu.param) {
         case 0: //Set etalon2
         case 1: //Set etalon1
-          sound.beep(200, 1, 0);
-          lcd.swapIsEdit();
-          if (lcd.menu.isEdit == 0) {
-            solder.fixEtalon();
+          sound_beep(200, 1, 0);
+          lcd_swapIsEdit();
+          if (lcdMenu.isEdit == 0) {
+            pid_fixEtalon(&solder.PID);
           }
           break;
         case 2: //Exit the calibration menu
-          solder.readEeprom();
-          lcd.menu.level = 1;
-          lcd.menu.param = 0;
-          lcd.printMenu();
+          solder_readEeprom();
+          lcdMenu.level = 1;
+          lcdMenu.param = 0;
+          lcd_printMenu();
           break;
         case 3: //Save etalons to eeprom
-          solder.updateEeprom();
+          pid_updateEepromEtalons(&solder.PID, &sol_arefTemp1, &sol_arefTemp2, 
+                                  &sol_arefAdc1, &sol_arefAdc2);
           break;
         case 4: //Set power solder on\off
-          solder.setPowerFixOnOff();
+          solder_setPowerFixOnOff();
           break;
         case 5: //Set power editing
-          sound.beep(200, 1, 0);
-          lcd.swapIsEdit();
+          sound_beep(200, 1, 0);
+          lcd_swapIsEdit();
           break;
       }      
       break;
     case 3: //Calibration menu ThermoFan
-      switch(lcd.menu.param){
+      switch(lcdMenu.param) {
         case 0: //Set etalon2
         case 1: //Set etalon1
-          sound.beep(200, 1, 0);
-          lcd.swapIsEdit();
-          if (lcd.menu.isEdit == 0) {
-            thermoFan.fixEtalon();
+          sound_beep(200, 1, 0);
+          lcd_swapIsEdit();
+          if (lcdMenu.isEdit == 0) {
+            pid_fixEtalon(&thermoFan.PID);
           }
           break;
         case 2: //Exit the calibration menu
-          thermoFan.readEeprom();
-          lcd.menu.level = 1;
-          lcd.menu.param = 1;
-          lcd.printMenu();
+          thermoFan_readEeprom();
+          lcdMenu.level = 1;
+          lcdMenu.param = 1;
+          lcd_printMenu();
           break;
         case 3: //Save etalons to eeprom
-          thermoFan.updateEeprom();
+          pid_updateEepromEtalons(&thermoFan.PID, &tf_arefTemp1, &tf_arefTemp2, 
+                                  &tf_arefAdc1, &tf_arefAdc2);
           break;
         case 4: //Set power thermofan on\off
-          thermoFan.setPowerFixOnOff();
+          thermoFan_setPowerFixOnOff();
           break;
         case 5: //Set power editing
-          sound.beep(200, 1, 0);
-          lcd.swapIsEdit();
+          sound_beep(200, 1, 0);
+          lcd_swapIsEdit();
           break;
       }      
       break;
     case 4: //PID Menu
-      switch (lcd.menu.param){
+      switch (lcdMenu.param) {
         case 0: //Solder kP switch edit
         case 1: //TF kP switch edit
         case 2: //TF kI switch edit
         case 3: //TF kD switch edit
-          lcd.swapIsEdit();
+          lcd_swapIsEdit();
           break;
         case 4: //Exit
-          lcd.menu.level = 1;
-          lcd.menu.param = 4;
-          lcd.printMenu();
+          lcdMenu.level = 1;
+          lcdMenu.param = 4;
+          lcd_printMenu();
           break;
         case 5: //Save
-          thermoFan.PID.updateEeprom(&ThermoFan::akP, &ThermoFan::akI, &ThermoFan::akD);
-          solder.PID.updateEeprom(&Solder::akP, &Solder::akI, &Solder::akD);
-          sound.beep(400, 2, 500);
+          pid_updateEeprom(&thermoFan.PID, &tf_akP, &tf_akI, 
+                            &tf_akD);
+          pid_updateEeprom(&solder.PID, &sol_akP, &sol_akI, 
+                            &sol_akD);
+          sound_beep(400, 2, 500);
           break;
         case 6: //Solder kD switch edit
         case 7: //Solder kI switch edit
-          lcd.swapIsEdit();
+          lcd_swapIsEdit();
           break;
       }
       break;
   }
 }
 
-void Encoder::onRotation(bool isClockwise){
-  if (lcd.menu.isEdit == 0){ //Moving cursors
-    if (lcd.menu.level == 0){ //Dashboard
-      lcd.printMenuCursor(CURSOR_TYPE_EMPTY);
-      if (isClockwise == true){       
-        lcd.menu.param = (lcd.menu.param == 5) ? 0 : (lcd.menu.param + 1);
+void encoder_onRotation(bool isClockwise) {
+  if (lcdMenu.isEdit == 0) { //Moving cursors
+    if (lcdMenu.level == 0) { //Dashboard
+      lcd_printMenuCursor(CURSOR_TYPE_EMPTY);
+      if (isClockwise == true) {       
+        lcdMenu.param = (lcdMenu.param == 5) ? 0 : (lcdMenu.param + 1);
       } else {
-        lcd.menu.param = (lcd.menu.param == 0) ? 5 : (lcd.menu.param - 1);    
+        lcdMenu.param = (lcdMenu.param == 0) ? 5 : (lcdMenu.param - 1);    
       }
-      lcd.printMenuCursor(CURSOR_TYPE_ARROW);
-    } else if (lcd.menu.level == 1){ //Root menu
-      lcd.printMenuCursor(CURSOR_TYPE_EMPTY);
-      if (isClockwise == true){       
-        lcd.menu.param = (lcd.menu.param == 4) ? 0 : (lcd.menu.param + 1);
+      lcd_printMenuCursor(CURSOR_TYPE_ARROW);
+    } else if (lcdMenu.level == 1) { //Root menu
+      lcd_printMenuCursor(CURSOR_TYPE_EMPTY);
+      if (isClockwise == true) {       
+        lcdMenu.param = (lcdMenu.param == 4) ? 0 : (lcdMenu.param + 1);
       } else {
-        lcd.menu.param = (lcd.menu.param == 0) ? 4 : (lcd.menu.param - 1);    
+        lcdMenu.param = (lcdMenu.param == 0) ? 4 : (lcdMenu.param - 1);    
       }
-      lcd.printMenuCursor(CURSOR_TYPE_ARROW);
-    } else if ((lcd.menu.level == 2)||(lcd.menu.level == 3)) { //Calibration menu Thermofan or Solder
-      lcd.printMenuCursor(CURSOR_TYPE_EMPTY);
-      if (isClockwise == true){       
-        lcd.menu.param = (lcd.menu.param == 5) ? 0 : (lcd.menu.param + 1);
+      lcd_printMenuCursor(CURSOR_TYPE_ARROW);
+    } else if ((lcdMenu.level == 2)||(lcdMenu.level == 3)) { 
+      //Calibration menu Thermofan or Solder
+      lcd_printMenuCursor(CURSOR_TYPE_EMPTY);
+      if (isClockwise == true) {       
+        lcdMenu.param = (lcdMenu.param == 5) ? 0 : (lcdMenu.param + 1);
       } else {
-        lcd.menu.param = (lcd.menu.param == 0) ? 5 : (lcd.menu.param - 1);    
+        lcdMenu.param = (lcdMenu.param == 0) ? 5 : (lcdMenu.param - 1);    
       }
-      lcd.printMenuCursor(CURSOR_TYPE_ARROW);
-    } else if (lcd.menu.level == 4){ //PID Menu 
-      lcd.printMenuCursor(CURSOR_TYPE_EMPTY);
-      if (isClockwise == true){       
-        lcd.menu.param = (lcd.menu.param == 7) ? 0 : (lcd.menu.param + 1);
+      lcd_printMenuCursor(CURSOR_TYPE_ARROW);
+    } else if (lcdMenu.level == 4){ //PID Menu 
+      lcd_printMenuCursor(CURSOR_TYPE_EMPTY);
+      if (isClockwise == true) {       
+        lcdMenu.param = (lcdMenu.param == 7) ? 0 : (lcdMenu.param + 1);
       } else {
-        lcd.menu.param = (lcd.menu.param == 0) ? 7 : (lcd.menu.param - 1);    
+        lcdMenu.param = (lcdMenu.param == 0) ? 7 : (lcdMenu.param - 1);    
       }
-      lcd.printMenuCursor(CURSOR_TYPE_ARROW);
+      lcd_printMenuCursor(CURSOR_TYPE_ARROW);
     }
 
   } else { //Edit param
-    if (lcd.menu.level == 0){ //Dashboard
-      switch (lcd.menu.param){
+    if (lcdMenu.level == 0) { //Dashboard
+      switch (lcdMenu.param) {
         case 2: //Changed fan
-          thermoFan.setFan(isClockwise);
+          thermoFan_setFanRotation(isClockwise);
           break;
         case 3: //Changed Temp fan
-          thermoFan.setTemp(isClockwise);
+          thermoFan_setTempRotation(isClockwise);
           break;
         case 4: //Changed Temp solder
-          solder.setTemp(isClockwise);
+          solder_setTempRotation(isClockwise);
           break;  
       }
-    } else if (lcd.menu.level == 3){ //Calibration menu Thermofan
-      switch (lcd.menu.param){
+    } else if (lcdMenu.level == 3) { //Calibration menu Thermofan
+      switch (lcdMenu.param) {
         case 0: //Changed etalon2
-          thermoFan.setEtalon(isClockwise);
-          break;
         case 1: //Changed etalon1
-          thermoFan.setEtalon(isClockwise);
+          pid_setEtalon(&thermoFan.PID, isClockwise);
           break;
         case 5: //Changed power
-          thermoFan.setPower(isClockwise);
+          pid_setPowerRotation(&thermoFan.PID, isClockwise);
           break;
       }
-    } else if (lcd.menu.level == 2){ //Calibration menu Solder
-      switch (lcd.menu.param){
+    } else if (lcdMenu.level == 2) { //Calibration menu Solder
+      switch (lcdMenu.param) {
         case 0: //Changed etalon2
-          solder.setEtalon(isClockwise);
-          break;
         case 1: //Changed etalon1
-          solder.setEtalon(isClockwise);
+          pid_setEtalon(&solder.PID, isClockwise);
           break;
         case 5: //Changed power
-          solder.setPower(isClockwise);
+          solder_setPower(isClockwise);
           break;
       }
-    } else if (lcd.menu.level == 4){ //PID menu
-      switch (lcd.menu.param){
+    } else if (lcdMenu.level == 4) { //PID menu
+      uint8_t x = 0; 
+      uint8_t y = 0; 
+      uint8_t pidk = 0;
+      stPID_t *pid = NULL;
+      switch (lcdMenu.param) {
         case 0: //Solder kP
-          solder.PID.setMultiplier(PID_Types::PID_KP, isClockwise);
-          lcd.printInt(1, 1, solder.PID.getMultiplier(PID_Types::PID_KP), 3);
+          x = 1; y = 1; pidk = PID_KP; pid = &solder.PID;
           break;
         case 1: //TF kP
-          thermoFan.PID.setMultiplier(PID_Types::PID_KP, isClockwise);
-          lcd.printInt(1, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KP), 3);
+          x = 1; y = 0; pidk = PID_KP; pid = &thermoFan.PID;
           break;
         case 2: //TF kI
-          thermoFan.PID.setMultiplier(PID_Types::PID_KI, isClockwise);
-          lcd.printInt(6, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KI), 3);
+          x = 6; y = 0; pidk = PID_KI; pid = &thermoFan.PID;
           break;
         case 3: //TF kD
-          thermoFan.PID.setMultiplier(PID_Types::PID_KD, isClockwise);
-          lcd.printInt(11, 0, thermoFan.PID.getMultiplier(PID_Types::PID_KD), 3);
+          x = 11; y = 0; pidk = PID_KD; pid = &thermoFan.PID;
           break;
         case 6: //Solder kI
-          solder.PID.setMultiplier(PID_Types::PID_KD, isClockwise);
-          lcd.printInt(11, 1, solder.PID.getMultiplier(PID_Types::PID_KD), 3);
+          x = 11; y = 1; pidk = PID_KD; pid = &solder.PID;
           break;
         case 7: //Solder kI
-          solder.PID.setMultiplier(PID_Types::PID_KI, isClockwise);
-          lcd.printInt(6, 1, solder.PID.getMultiplier(PID_Types::PID_KI), 3);
+          x = 6; y = 1; pidk = PID_KI; pid = &solder.PID;
           break;
       }
+      lcd_printInt(x, y, pid_setMultiplier(pid, pidk, isClockwise), 3, true);
     }
   }
  

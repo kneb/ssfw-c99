@@ -18,32 +18,32 @@ const uint8_t otherSymbol[8][8] PROGMEM = {
   {0x02, 0x05, 0x09, 0x1a, 0x1c, 0x18, 0x10, 0x00}, // icon soldering down
 };
 
-void HD44780_init() {
+void hd44780_init() {
   PORT_LCD_D |= 0x30;
-  HD44780_switchE();
+  hd44780_switchE();
   _delay_ms(5);
-  HD44780_switchE();
+  hd44780_switchE();
   _delay_us(100);
-  HD44780_witchE();
+  hd44780_switchE();
   _delay_ms(10);
   PORT_LCD_D &= 0x0f;
   PORT_LCD_D |= 0x20;
-  HD44780_switchE(); 
-  sendCommand(0x28);
-  sendCommand(0x0c);
-  sendCommand(0x06);
-  sendCommand(0x40);
+  hd44780_switchE(); 
+  hd44780_sendCommand(0x28);
+  hd44780_sendCommand(0x0c);
+  hd44780_sendCommand(0x06);
+  hd44780_sendCommand(0x40);
   _delay_ms(1);
   for (uint8_t j = 0; j < 8; j ++) {
     for (uint8_t i = 0; i < 8; i ++) {
-      HD44780_sendChar(pgm_read_byte(&otherSymbol[j][i]));
+      hd44780_sendChar(pgm_read_byte(&otherSymbol[j][i]));
       _delay_ms(1);
     }
   }
-  HD44780_clear();  
+  hd44780_clear();  
 }
 
-void HD44780_switchE() {
+void hd44780_switchE() {
   _delay_us(20);
   PORT_LCD_E |= PIN_LCD_E;
   _delay_us(10);
@@ -51,7 +51,7 @@ void HD44780_switchE() {
   _delay_us(20);
 }
 
-void HD44780_send(bool isCommand, uint8_t data) {
+void hd44780_send(bool isCommand, uint8_t data) {
   if (isCommand == false) {
     PORT_LCD_RS |= PIN_LCD_RS;
   } else {
@@ -59,40 +59,40 @@ void HD44780_send(bool isCommand, uint8_t data) {
   }
   PORT_LCD_D &= 0x0f; 
   PORT_LCD_D |= (data & 0xf0);
-  HD44780_switchE();
+  hd44780_switchE();
   PORT_LCD_D &= 0x0f;
   PORT_LCD_D |= (data << 4);
-  HD44780_switchE();  
+  hd44780_switchE();  
 }
 
-void HD44780_sendCommand(uint8_t cmd) {
-  HD44780_send(true, cmd);  
+void hd44780_sendCommand(uint8_t cmd) {
+  hd44780_send(true, cmd);  
 }
 
-void HD44780_sendChar(const char chr) {
-  HD44780_send(false, chr);
+void hd44780_sendChar(const char chr) {
+  hd44780_send(false, chr);
 }
 
-void HD44780_sendString(const char* str) {
+void hd44780_sendString(const char* str) {
   while (*str != 0) {
-    HD44780_sendChar(*str);
+    hd44780_sendChar(*str);
     str += 1;
   }
 }
 
-void HD44780_clear() {
-  HD44780_sendCommand(0x01);
+void hd44780_clear() {
+  hd44780_sendCommand(0x01);
   _delay_ms(2);
 }
 
-void HD44780_goTo(uint8_t x, uint8_t y) {
+void hd44780_goTo(uint8_t x, uint8_t y) {
   uint8_t addr = 0x80 + 0x40*y + x;
-  HD44780_sendCommand(addr);
+  hd44780_sendCommand(addr);
 }
 
-void HD44780_sendStringFlash(const char* str) {
+void hd44780_sendStringFlash(const char* str) {
   while (pgm_read_byte(str) != 0) {
-    HD44780_sendChar(pgm_read_byte(str));
+    hd44780_sendChar(pgm_read_byte(str));
     str ++;
   }
 }

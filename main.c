@@ -15,17 +15,17 @@
 
 int main(void) {
   init();
-  lcd.printLogo();
-  thermoFan.readEeprom();
-  solder.readEeprom();
+  lcd_printLogo();
+  thermoFan_readEeprom();
+  solder_readEeprom();
   _delay_ms(1000); // select a delay for the logo display
-  lcd.menu.level = 0;
-  lcd.printMain();
+  lcdMenu.level = 0;
+  lcd_printMain();
 
   sei();
   while (true) {
 	  _delay_ms(20);
-    encoder.getButtonStatus();
+    encoder_getButtonStatus();
     
   }
 }

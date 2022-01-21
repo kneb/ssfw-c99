@@ -26,22 +26,22 @@ typedef struct {
   uint8_t isEdit;
   uint8_t param;
   uint8_t level;
-} St_Menu;
+} stMenu_t;
 
-extern St_Menu Lcd_menu;
+extern stMenu_t lcdMenu;
 
-void Lcd_Init();
-void Lcd_printLogo();
-void Lcd_printMain(); 
-void Lcd_printMenu();
-void Lcd_printPIDMenu();
-void Lcd_printCalibration(uint8_t calibrationMenu);
-void Lcd_printIconsStatus();
-void Lcd_printMenuCursor(uint8_t cursorType);
-void Lcd_printInt(uint8_t x, uint8_t y, uint16_t source, uint8_t len, 
-                  bool zero = true);
-void Lcd_swapIsEdit();
+void lcd_init();
+void lcd_printLogo();
+void lcd_printMain(); 
+void lcd_printMenu();
+void lcd_printPIDMenu();
+void lcd_printCalibration(uint8_t calibrationMenu);
+void lcd_printIconsStatus();
+void lcd_printMenuCursor(uint8_t cursorType);
+void lcd_printInt(uint8_t x, uint8_t y, uint16_t source, uint8_t len, 
+                  bool zero);
+void lcd_swapIsEdit();
 
-void itoa(char* buf, uint16_t source, uint8_t len, bool zero = true);
+void itoa(char* buf, uint16_t source, uint8_t len, bool zero);
 
 #endif /* LCD_H_ */

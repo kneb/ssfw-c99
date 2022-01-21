@@ -7,11 +7,9 @@
 
 #include "Headers/globals.h"
 
-Lcd lcd;
-Encoder encoder;
-ThermoFan thermoFan;
-Solder solder;
-Sound sound;
+stThermoFan_t thermoFan;
+stSolder_t solder;
+stSound_t sound;
 
 uint8_t tim = 0;
 
@@ -23,6 +21,9 @@ void init() {
   PORTC = 0b00010000;
   
   hd44780_init();
+  lcd_init();
+  solder_init();
+  thermoFan_init();
   
   MCUCR |= (1 << ISC00)|(1 << ISC10); //any logical change on INT0 and INT1
   GICR |= (1 << INT0);
@@ -44,9 +45,9 @@ void init() {
 ISR(INT1_vect) { //Vibro sensor hakko
   GICR &= ~(1 << INT1);
   solder.timerSleep = 0;
-  if (solder.isPowered == SOL_HEAT_SLEEP) {
-    solder.setPowerOn();
-    Sound_beep(100, 3, 200);
+  if (solder.PID.isPowered == SOL_HEAT_SLEEP) {
+    solder_setPowerOn();
+    sound_beep(100, 3, 200);
   }
 }
 
@@ -56,64 +57,64 @@ ISR(INT0_vect) { //the encoder has been turned
   _delay_ms(1);
   uint8_t a = (PIND & 4) >> 2;
   if (a == b) {
-    encoder.onRotation(false);
+    encoder_onRotation(false);
   } else {
-    encoder.onRotation(true);
+    encoder_onRotation(true);
   }
   GIFR |= (1 << INTF0);
   GICR |= (1 << INT0); //enable ext.int. on INT0
 }
 
 ISR(TIMER0_OVF_vect) { //Timer0 at frequency ~61Hz (~16,4ms)
-  Sound_getBeep();
+  sound_getBeep();
   if (tim < 61) {   
     tim ++;
     if ((tim % 30) == 0) {
-      thermoFan.getStatus();
-      solder.getStatus();
-      if (lcd.menu.level == 0) {
-        lcd.printIconsStatus();
+      thermoFan_getStatus();
+      solder_getStatus();
+      if (lcdMenu.level == 0) {
+        lcd_printIconsStatus();
       }
     }
     if ((tim % 15) == 0) {
-      thermoFan.getCooling();
+      thermoFan_getCooling();
     }
   } else { //The code is executable with a frequency of one second
     tim = 0;
-    if (lcd.menu.level == 0) { //Dashboard
-      lcd.printInt(1, 0, thermoFan.currentTemp, 3);
-      lcd.printInt(1, 1, solder.currentTemp, 3);
-    } else if (lcd.menu.level == 3) { //Calibration menu thermofan
-      lcd.printInt(10, 0, thermoFan.currentTemp, 3);
-      if(lcd.menu.isEdit == 1) {
-        if (lcd.menu.param == 0) {
-          lcd.printInt(5, 1, thermoFan.adc, 4);
-        } else if (lcd.menu.param == 1) {
-          lcd.printInt(5, 0, thermoFan.adc, 4);
+    if (lcdMenu.level == 0) { //Dashboard
+      lcd_printInt(1, 0, thermoFan.PID.currentTemp, 3, true);
+      lcd_printInt(1, 1, solder.PID.currentTemp, 3, true);
+    } else if (lcdMenu.level == 3) { //Calibration menu thermofan
+      lcd_printInt(10, 0, thermoFan.PID.currentTemp, 3, true);
+      if(lcdMenu.isEdit == 1) {
+        if (lcdMenu.param == 0) {
+          lcd_printInt(5, 1, thermoFan.PID.adc, 4, true);
+        } else if (lcdMenu.param == 1) {
+          lcd_printInt(5, 0, thermoFan.PID.adc, 4, true);
         }                  
       }
-    } else if (lcd.menu.level == 2) { //Calibration menu solder
-      lcd.printInt(10, 0, solder.currentTemp, 3);
-      if(lcd.menu.isEdit == 1) {
-        if (lcd.menu.param == 0) {
-          lcd.printInt(5, 1, solder.adc, 4);
-        } else if (lcd.menu.param == 1) {
-          lcd.printInt(5, 0, solder.adc, 4);
+    } else if (lcdMenu.level == 2) { //Calibration menu solder
+      lcd_printInt(10, 0, solder.PID.currentTemp, 3, true);
+      if(lcdMenu.isEdit == 1) {
+        if (lcdMenu.param == 0) {
+          lcd_printInt(5, 1, solder.PID.adc, 4, true);
+        } else if (lcdMenu.param == 1) {
+          lcd_printInt(5, 0, solder.PID.adc, 4, true);
         }                  
       }
     }     
-    if (solder.isPowered == SOL_HEAT_ON) {
+    if (solder.PID.isPowered == POWER_HEAT_ON) {
       if (solder.timerSleep < DELAY_SLEEP) {
         solder.timerSleep += 1;
       } else {
-        solder.setPowerSleep();
+        solder_setPowerSleep();
       }
       GICR |= (1 << INT1);
     }
   }
 }
 
-void Sound_getBeep(){
+void sound_getBeep(){
   if (sound.beepCount > 0) {
     if (sound.beepTim > 0) {
       sound.beepTim--;
@@ -126,8 +127,7 @@ void Sound_getBeep(){
   }  
 }
 
-void Sound_beep(uint16_t duration_ms = 500, uint8_t count = 1, 
-                uint16_t delay_ms = 500) {  
+void sound_beep(uint16_t duration_ms, uint8_t count, uint16_t delay_ms) {  
   sound.beepDuration = duration_ms/16;
   sound.beepTim = sound.beepDuration;
   sound.beepDurationDelay = delay_ms/16;
@@ -137,9 +137,9 @@ void Sound_beep(uint16_t duration_ms = 500, uint8_t count = 1,
 
 ISR(ADC_vect) {
   if ((ADMUX & 1) == 1) {
-    thermoFan.tempConversion(ADCW);
+    pid_tempConversion(&thermoFan.PID, ADCW);
   } else {
-    solder.tempConversion(ADCW);
+    pid_tempConversion(&solder.PID, ADCW);
   }
 }
 
